@@ -1,0 +1,19 @@
+ID: 322944869 
+CREATED BY: Yahya Saad
+EX2 – HTTP client 
+==Files==
+client.c
+Main function contains string parsing for the command as HTTP request based on user’s command line input, sends the request to a Web server, receives the reply from the server, and displays the reply message on screen.
+
+README.txt 
+This file; more info about http request that has been used in different way.
+==compile==
+gcc -Wall client.c -o client
+run: valgrind ./client "[-p<text>] [-r n <pr1=value1 pr2=value2 ...>] <URL>\n"
+==General information== 
+- HTTP://HOST:[PORT]/Filepath. default PORT is 80 if not given.
+- Private function
+void error(char *):  perror(<sys_call>) and exit the program for every situation that perror is needed.
+int onlyNum(char *): check if the char is a number between 0 to 9.
+void freeAll(char*, char*, char**, int): to free alocated memory after finish using it. 
+
