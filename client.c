@@ -1,10 +1,10 @@
+
 //By: Yahya Saad ID: 322944869
 //Ex2: client.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
     int check_host=0;        // check host status
     char* command;           // finalize command pattern
     char** R_para;          // array contains -r parameters and their values
-    char buffer[100];// test for buffer size 100' an example
+    unsigned char buffer[100];// test for buffer size 100' an example
     char* host=NULL;//set the host value here
     char* path;// set the path value
     int size=argc-1; // command length
@@ -46,7 +46,9 @@ int main(int argc, char *argv[]){
 
 
     char* body;
-        //request parsing
+    char *tmpP;
+    char *tmpH;
+    //request parsing
     for(int i=1; i<argc; i++){
 
         // check -p situation
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]){
                 body=argv[i+1];
                 size=size-2;
                 p=1;
-                i++;
+                i+=2;
             }
         }
 
@@ -104,12 +106,11 @@ int main(int argc, char *argv[]){
 
             //after http
         else if(strstr(argv[i],"http://")!=NULL && check_host==0){
-            char* tmp;
-            tmp=strstr(argv[i],"http://");
-            tmp+=HTTP_SIZE;
+            tmpH=strstr(argv[i],"http://");
+            tmpH+=HTTP_SIZE;
             size--;
             //check port
-            if(strstr(tmp,":")==NULL){
+            if(strstr(tmpH,":")==NULL){
                 //set default port to 80
                 port[0]='8';
                 port[1]='0';
@@ -117,26 +118,25 @@ int main(int argc, char *argv[]){
             }
             else
             {
-                char* tmp;
-                tmp=strstr(tmp,":");
-                tmp++;
-                if(tmp[0]=='/')
+                tmpP=strstr(tmpH,":");
+                tmpP++;
+                if(tmpP[0]=='/')
                     size=-1;
                 int h;
                 for(h=0; h< MAX_PORT-1; h++){
-                    if(tmp[h]=='\0' || tmp[h]=='/')
+                    if(tmpP[h]=='\0' || tmpP[h]=='/')
                         break;
-                    port[h]=tmp[h];
+                    port[h]=tmpP[h];
                 }
                 port[MAX_PORT-1]='\0';
 
-                tmp+=h;
-                if(tmp[0]!='\0' && tmp[0]!='/')
-                    size=-1;
+                tmpP+=h;
+                if(tmpP[0]!='\0' && tmpP[0]!='/')
+                    size=size-1;
 
             }
 
-            host=(char*)calloc(strlen(tmp)+1,sizeof(char));
+            host=(char*)calloc(strlen(tmpH)+1,sizeof(char));
             if(host==NULL){
                 fprintf(stderr, "problem with allocating memory \n");
                 free(port);
@@ -145,31 +145,32 @@ int main(int argc, char *argv[]){
                 exit(EXIT_FAILURE) ;
             }
             check_host=1;
-            path=strstr(tmp,"/");
-            for(int i=0; i<strlen(tmp); i++){
-                if(tmp[i]=='\0' || tmp[i]=='/' || tmp[i]==':')
+            path=strstr(tmpH,"/");
+            for(int x=0; x<strlen(tmpH); x++){
+                if(tmpH[x]=='\0' || tmpH[x]=='/' || tmpH[x]==':')
                     break;
-                host[i]=tmp[i];
+                host[x]=tmpH[x];
             }
         }
             //usage error state
         else{
-            WRONG_COMMAND;
+            //here
             if(check_host==1)
                 freeAll(host,port,R_para,r);
-
-            exit(EXIT_FAILURE) ;
+            WRONG_COMMAND
+            exit(EXIT_FAILURE);
         }
 
     }
-    if(size!=0 || onlyNum(port)==-1 || atoi(port)>MAX_PORT_VAL || host==NULL){
-        WRONG_COMMAND;
-        if(check_host==1)
-            freeAll(host,port,R_para,r);
-        exit(EXIT_FAILURE) ;
-    }
+//    if(size!=0 || onlyNum(port)==-1 || atoi(port)>MAX_PORT_VAL || host==NULL){
+//
+//        if(check_host==1)
+//            freeAll(host,port,R_para,r);
+//        WRONG_COMMAND
+//        exit(EXIT_FAILURE) ;
+//    }
     //----------------connect to the server------------------
-    int mk_connect; // in order to connect with the server 
+    int mk_connect; // in order to connect with the server
     int s;             // compute socket
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0){
@@ -197,9 +198,9 @@ int main(int argc, char *argv[]){
 
     int pcount;//path count length
     if(path==NULL)
-      pcount = 0;
+        pcount = 0;
     else
-       pcount=strlen(path);
+        pcount=strlen(path);
 
     int command_length=strlen(host)+pcount+COMMAND;
     command=(char*)calloc(command_length,sizeof(char));
@@ -237,6 +238,7 @@ int main(int argc, char *argv[]){
     if(p==1){
         strcat(command,body);
     }
+
     printf("HTTP request =\n%s\nLEN = %ld\n",command,strlen(command));
     // send and then receive response from the server
     write(s, command, strlen(command)+1) ;
@@ -246,12 +248,13 @@ int main(int argc, char *argv[]){
         bytes_read+=mk_connect;
         buffer[mk_connect]='\0';
         if(mk_connect > 0)
-            printf("%s", buffer) ;
+//            printf("%s", buffer) ;
+            write(STDOUT_FILENO, buffer, mk_connect);
         else if(mk_connect<0)
             error("read() failed") ;
     }while(mk_connect>0);
 
-    printf("\nTotal received response bytes: %d\n",bytes_read);
+    printf("\n Total received response bytes: %d\n",bytes_read);
     close(s);
     freeAll(host,port,R_para,r);
     free(command);
@@ -281,4 +284,3 @@ int onlyNum(char* str){
     }
     return 0;
 }
-
