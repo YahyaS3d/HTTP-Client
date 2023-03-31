@@ -1,6 +1,6 @@
 
-//By: Yahya Saad ID: 322944869
-//Ex2: client.c
+//By: Yahya Saad
+//client.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
